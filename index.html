@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pague com Pix</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+  :root {
+        --nubank-purple: #8A05BE;
+            --nubank-purple-dark: #650091;
+                --black: #0D0D0D;
+                    --gray: #1c1c1c;
+  }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+                background: linear-gradient(160deg, var(--black) 0%, var(--nubank-purple-dark) 100%);
+                    min-height: 100vh;
+                        display: flex;
+                            align-items: center;
+                                justify-content: center;
+                                    padding: 20px;
+      }
+
+        .card {
+                background: var(--gray);
+                    border-radius: 24px;
+                        padding: 40px 30px;
+                            max-width: 400px;
+                                width: 100%;
+                                    text-align: center;
+                                        box-shadow: 0 20px 60px rgba(138, 5, 190, 0.4);
+                                            border: 1px solid rgba(138, 5, 190, 0.3);
+        }
+
+          .logo {
+                color: var(--nubank-purple);
+                    font-size: 28px;
+                        font-weight: 800;
+                            margin-bottom: 5px;
+                                letter-spacing: -1px;
+          }
+
+            .subtitle {
+                    color: #aaa;
+                        font-size: 14px;
+                            margin-bottom: 25px;
+            }
+
+              #qrcode {
+                    background: white;
+                        display: inline-block;
+                            padding: 16px;
+                                border-radius: 16px;
+                                    margin-bottom: 25px;
+              }
+
+                .pix-box {
+                        background: var(--black);
+                            border: 1px solid var(--nubank-purple);
+                                border-radius: 12px;
+                                    padding: 14px;
+                                        margin-bottom: 15px;
+                }
+
+                  .pix-label {
+                        color: #999;
+                            font-size: 12px;
+                                text-transform: uppercase;
+                                    letter-spacing: 1px;
+                                        margin-bottom: 8px;
+                  }
+
+                    .pix-key {
+                            color: #fff;
+                                font-size: 16px;
+                                    font-weight: 600;
+                                        word-break: break-all;
+                    }
+
+                      .copy-btn {
+                            background: var(--nubank-purple);
+                                color: white;
+                                    border: none;
+                                        padding: 14px 20px;
+                                            border-radius: 12px;
+                                                font-size: 15px;
+                                                    font-weight: 700;
+                                                        width: 100%;
+                                                            cursor: pointer;
+                                                                transition: background 0.2s, transform 0.1s;
+                      }
+
+                        .copy-btn:hover { background: var(--nubank-purple-dark); }
+                          .copy-btn:active { transform: scale(0.97); }
+
+                            .copy-btn.copied { background: #2ecc71; }
+
+                              .footer-note {
+                                    color: #666;
+                                        font-size: 12px;
+                                            margin-top: 20px;
+                              }
+                              </style>
+                              </head>
+                              <body>
+
+                              <div class="card">
+                                <div class="logo">💜 Meu Pix</div>
+                                  <div class="subtitle">Escaneie o QR Code ou copie a chave abaixo</div>
+
+                                    <div id="qrcode"></div>
+
+                                      <div class="pix-box">
+                                          <div class="pix-label">Chave Pix (CPF)</div>
+                                              <div class="pix-key" id="pixKey">032.569.781-77</div>
+                                                </div>
+
+                                                  <button class="copy-btn" id="copyBtn" onclick="copiarPix()">Copiar chave Pix</button>
+
+                                                    <div class="footer-note">Pagamento via Pix • Chave: CPF</div>
+                                                    </div>
+
+                                                    <script>
+                                                      // ===== CONFIGURAÇÕES =====
+                                                        const chavePix = "03256978177";      // chave sem pontuação (obrigatório no payload)
+                                                          const nomeRecebedor = "SEU NOME AQUI"; // max 25 caracteres, sem acento
+                                                            const cidade = "SUA CIDADE";           // max 15 caracteres, sem acento
+                                                              const valor = "";                      // deixe "" para valor livre, ou ex: "50.00"
+                                                                const txid = "***";                    // identificador da transação (opcional)
+
+                                                                  // ===== GERADOR DO PAYLOAD PIX (BR Code / EMV) =====
+                                                                    function tlv(id, value) {
+                                                                            const len = value.length.toString().padStart(2, "0");
+                                                                                return id + len + value;
+                                                                    }
+
+                                                                      function montarPayload() {
+                                                                            const gui = tlv("00", "br.gov.bcb.pix");
+                                                                                const chave = tlv("01", chavePix);
+                                                                                    const merchantAccount = tlv("26", gui + chave);
+
+                                                                                        const mcc = tlv("52", "0000");
+                                                                                            const moeda = tlv("53", "986");
+                                                                                                const valorField = valor ? tlv("54", valor) : "";
+                                                                                                    const pais = tlv("58", "BR");
+                                                                                                        const nome = tlv("59", nomeRecebedor.substring(0, 25));
+                                                                                                            const cid = tlv("60", cidade.substring(0, 15));
+
+                                                                                                                const txidField = tlv("05", txid);
+                                                                                                                    const addData = tlv("62", txidField);
+
+                                                                                                                        let payload =
+                                                                                                                              tlv("00", "01") +
+                                                                                                                                    merchantAccount +
+                                                                                                                                          mcc +
+                                                                                                                                                moeda +
+                                                                                                                                                      valorField +
+                                                                                                                                                            pais +
+                                                                                                                                                                  nome +
+                                                                                                                                                                        cid +
+                                                                                                                                                                              addData +
+                                                                                                                                                                                    "6304"; // placeholder do CRC
+
+                                                                                                                                                                                        payload += crc16(payload);
+                                                                                                                                                                                            return payload;
+                                                                      }
+
+                                                                        function crc16(payload) {
+                                                                                let polinomio = 0x1021;
+                                                                                    let resultado = 0xFFFF;
+
+                                                                                        for (let i = 0; i < payload.length; i++) {
+                                                                                                  resultado ^= (payload.charCodeAt(i) << 8);
+                                                                                                        for (let j = 0; j < 8; j++) {
+                                                                                                                    if ((resultado & 0x8000) !== 0) {
+                                                                                                                                  resultado = ((resultado << 1) ^ polinomio) & 0xFFFF;
+                                                                                                                    } else {
+                                                                                                                                  resultado = (resultado << 1) & 0xFFFF;
+                                                                                                                    }
+                                                                                                        }
+                                                                                        }
+                                                                                            return resultado.toString(16).toUpperCase().padStart(4, "0");
+                                                                        }
+
+                                                                          const payloadPix = montarPayload();
+
+                                                                            new QRCode(document.getElementById("qrcode"), {
+                                                                                    text: payloadPix,
+                                                                                        width: 220,
+                                                                                            height: 220,
+                                                                                                colorDark: "#0D0D0D",
+                                                                                                    colorLight: "#ffffff",
+                                                                                                        correctLevel: QRCode.CorrectLevel.M
+                                                                            });
+
+                                                                              function copiarPix() {
+                                                                                    navigator.clipboard.writeText(chavePix.replace(
+                                                                                              /(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4"
+                                                                                    )).then(() => {
+                                                                                              const btn = document.getElementById("copyBtn");
+                                                                                                    btn.textContent = "✅ Chave copiada!";
+                                                                                                          btn.classList.add("copied");
+                                                                                                                setTimeout(() => {
+                                                                                                                            btn.textContent = "Copiar chave Pix";
+                                                                                                                                    btn.classList.remove("copied");
+                                                                                                                }, 2000);
+                                                                                    });
+                                                                              }
+                                                                              </script>
+
+                                                                              </body>
+                                                                              </html>
+                                                                                                                })
+                                                                                    })
+                                                                                    ))
+                                                                              }
+                                                                            })
+                                                                                                                    }
+                                                                                                                    }
+                                                                                                        }
+                                                                                        }
+                                                                        }
+                                                                      }
+                                                                    }
+                              }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+  }
